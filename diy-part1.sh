@@ -1,3 +1,4 @@
 #!/bin/bash
-# 将 ImmortalWrt 官方 feeds 源替换为清华大学镜像（国内兜底）
-sed -i 's#https://github.com/immortalwrt#https://mirrors.tuna.tsinghua.edu.cn/immortalwrt#g' feeds.conf.default
+# 删除引发报错的 routing 和 telephony 源
+sed -i '/src-git routing/d' feeds.conf.default
+sed -i '/src-git telephony/d' feeds.conf.default
