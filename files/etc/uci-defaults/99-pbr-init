@@ -1,0 +1,67 @@
+#!/bin/sh
+#
+# 旁路由首次启动初始化（仅执行一次，成功后本文件自动删除）
+# 主路由(爱快)=10.10.10.1   旁路由=10.10.10.2
+#
+
+# ---- 1) LAN 静态地址 / 网关 / DNS ----
+uci -q batch <<EOF
+set network.lan.proto='static'
+set network.lan.ipaddr='10.10.10.2'
+set network.lan.netmask='255.255.255.0'
+set network.lan.gateway='10.10.10.1'
+set network.lan.dns='114.114.114.114 223.5.5.5'
+set network.lan.ipv6='0'
+commit network
+EOF
+
+# ---- 2) 关闭 LAN 上的 DHCP / RA / DHCPv6 ----
+uci -q batch <<EOF
+set dhcp.lan.ignore='1'
+set dhcp.lan.dhcpv6='disabled'
+set dhcp.lan.ra='disabled'
+set dhcp.lan.ndp='disabled'
+commit dhcp
+EOF
+
+# ---- 3) 单网口旁路由：删除 wan/wan6，避免冲突 ----
+uci -q delete network.wan  2>/dev/null
+uci -q delete network.wan6 2>/dev/null
+uci -q delete network.lan.ip6assign 2>/dev/null
+uci -q commit network
+
+# ---- 4) 彻底关闭 IPv6（服务 + 内核） ----
+/etc/init.d/odhcpd disable 2>/dev/null
+/etc/init.d/odhcpd stop    2>/dev/null
+mkdir -p /etc/sysctl.d
+cat >/etc/sysctl.d/99-disable-ipv6.conf <<EOF
+net.ipv6.conf.all.disable_ipv6=1
+net.ipv6.conf.default.disable_ipv6=1
+net.ipv6.conf.lo.disable_ipv6=1
+EOF
+
+# ---- 5) 防火墙：放行转发；旁路由不做 NAT（NAT 由爱快负责） ----
+uci -q batch <<EOF
+set firewall.@defaults[0].forward='ACCEPT'
+set firewall.@zone[0].input='ACCEPT'
+set firewall.@zone[0].output='ACCEPT'
+set firewall.@zone[0].forward='ACCEPT'
+set firewall.@zone[0].masq='0'
+commit firewall
+EOF
+
+# ---- 6) 时区 ----
+uci set system.@system[0].timezone='CST-8'
+uci set system.@system[0].zonename='Asia/Shanghai'
+uci commit system
+
+# ---- 7) 启用 SNMP 与 ttyd ----
+/etc/init.d/snmpd enable 2>/dev/null
+/etc/init.d/snmpd restart 2>/dev/null
+/etc/init.d/ttyd enable 2>/dev/null
+/etc/init.d/ttyd restart 2>/dev/null
+
+# ---- 8) (可选) 兜底：把软件源换成国内镜像 ----
+#sed -i 's#downloads.immortalwrt.org#mirror.nju.edu.cn/immortalwrt#g' /etc/opkg/distfeeds.conf
+
+exit 0
