@@ -2,7 +2,7 @@
 # 1. 修改默认 LAN IP 为 10.10.10.2
 sed -i 's/192.168.1.1/10.10.10.2/g' package/base-files/files/bin/config_generate
 
-# 2. 强制在配置中选中 Material 主题和 UU 加速器（防止 .config 漏选）
+# 2. 强制在配置中选中 Material 主题（防止 .config 漏选）
 echo "CONFIG_PACKAGE_luci-theme-material=y" >> .config
 
 # 3. 创建首次启动脚本目录
@@ -29,7 +29,7 @@ uci -q delete dhcp.lan.ra_flags
 # 设置 root 密码为 123456
 echo -e "123456\n123456" | passwd root
 
-# 启用 SNMP 服务（供 iKuai 跨三层应用识别设备 MAC）
+# 启用 SNMP 服务（供 iKuai 跨三层识别设备 MAC）
 service snmpd enable
 
 # 旁路由防火墙优化
