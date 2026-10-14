@@ -2,7 +2,7 @@
 # 1. 修改默认 LAN IP 为 10.10.10.2
 sed -i 's/192.168.1.1/10.10.10.2/g' package/base-files/files/bin/config_generate
 
-# 2. 强制在配置中选中 Material 主题（防止 .config 漏选）
+# 2. 强制在配置中选中 Material 主题
 echo "CONFIG_PACKAGE_luci-theme-material=y" >> .config
 
 # 3. 创建首次启动脚本目录
