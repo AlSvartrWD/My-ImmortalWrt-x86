@@ -61,16 +61,18 @@ uci commit system
 /etc/init.d/ttyd enable 2>/dev/null
 /etc/init.d/ttyd restart 2>/dev/null
 
-# ---- 8) 修正软件源 ----
+# ---- 8) 修正软件源（opkg / apk 双兼容） ----
 # ImmortalWrt 的 default-settings-chinese 默认把源指向 mirrors.vsean.net（PKU 镜像），
-# 但该镜像缺少 24.10-SNAPSHOT/targets 目录，会导致 opkg update 签名校验失败
-# （报错形如：Signature check failed）。
-# 这里统一换成南京大学镜像（实测 core/base/luci/packages 均完整）。
-sed -i -e 's#mirrors.vsean.net/openwrt#mirror.nju.edu.cn/immortalwrt#g' \
-       -e 's#downloads.immortalwrt.org#mirror.nju.edu.cn/immortalwrt#g' \
-       /etc/opkg/distfeeds.conf 2>/dev/null
+# 但该镜像缺少 <版本>-SNAPSHOT/targets 目录，会导致软件包索引与签名校验失败，
+# 进而使 opkg/apk 安装、升级失败（OpenClash 在线更新会因此报错甚至弄坏依赖）。
+# 这里统一换成南京大学镜像（实测 targets 与 packages 均完整）。
+for f in /etc/opkg/distfeeds.conf /etc/apk/repositories.d/distfeeds.list; do
+	[ -f "$f" ] || continue
+	sed -i -e 's#mirrors.vsean.net/openwrt#mirror.nju.edu.cn/immortalwrt#g' \
+	       -e 's#downloads.immortalwrt.org#mirror.nju.edu.cn/immortalwrt#g' "$f"
+done
 
-# 清理可能残留的错误签名缓存，避免 opkg 继续报错
+# 清理可能残留的错误签名缓存
 rm -f /var/opkg-lists/*.sig 2>/dev/null
 
 exit 0
