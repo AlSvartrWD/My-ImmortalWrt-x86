@@ -4,7 +4,7 @@
 # OpenClash 无需额外 feed —— ImmortalWrt 官方 luci 源已自带 luci-app-openclash
 #
 
-# UU加速器（luci-app-uugamebooster）
-echo 'src-git fengqipackages https://github.com/fengqi/immortalwrt-packages.git;openwrt-24.10' >> feeds.conf.default
+# UU加速器（luci-app-uugamebooster）：25.12+ 用 master 分支
+echo 'src-git fengqipackages https://github.com/fengqi/immortalwrt-packages.git' >> feeds.conf.default
 
 exit 0
