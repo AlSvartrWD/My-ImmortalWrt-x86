@@ -44,4 +44,23 @@ if [ -f "$UU_MK" ]; then
     grep -E 'PKG_VERSION|PKG_HASH|PKG_SOURCE_URL' "$UU_MK" | head -n 8
 fi
 
+# 3) OpenClash：换用上游 vernesong 的 0.48.002（ImmortalWrt 各分支自带 0.47.156，太旧）
+#    固定 commit，保证构建可复现；失败时不中断构建，退回 feed 自带版本。
+OPENCLASH_PIN="e553e82e01c697aefbe1555261a503f425e00ccd"
+if [ -d feeds/luci/applications/luci-app-openclash ]; then
+    echo "==> 移除 feed 自带 luci-app-openclash (0.47.156)"
+    rm -rf feeds/luci/applications/luci-app-openclash
+fi
+if [ ! -d package/luci-app-openclash ]; then
+    echo "==> 拉取上游 OpenClash 并固定到 $OPENCLASH_PIN"
+    if git clone --quiet https://github.com/vernesong/OpenClash.git "$GITHUB_WORKSPACE/oc-upstream" 2>/dev/null \
+       && git -C "$GITHUB_WORKSPACE/oc-upstream" checkout --quiet "$OPENCLASH_PIN" 2>/dev/null; then
+        cp -a "$GITHUB_WORKSPACE/oc-upstream/luci-app-openclash" package/luci-app-openclash
+        echo "==> 上游版本：$(grep -E '^PKG_VERSION' package/luci-app-openclash/Makefile)"
+    else
+        echo "==> !! 上游拉取失败，回退到 feed 版本（0.47.156），请检查"
+    fi
+    rm -rf "$GITHUB_WORKSPACE/oc-upstream"
+fi
+
 exit 0
