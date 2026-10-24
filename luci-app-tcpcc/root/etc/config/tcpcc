@@ -1,0 +1,3 @@
+config tcpcc 'main'
+	option cc 'bbr'
+	option qdisc 'fq'

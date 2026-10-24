@@ -1,0 +1,42 @@
+#!/bin/sh /etc/rc.common
+# TCP 拥塞控制 / 默认 qdisc 应用脚本
+#
+# 为什么 START=13：kmod-tcp-bbr 自带 /etc/sysctl.d/12-tcp-bbr.conf，由
+# /etc/init.d/sysctl（START=11）统一套用，会把 cc 写成 bbr。本脚本晚一步跑，
+# 因此 LuCI 页面（/etc/config/tcpcc）里的选择拥有最终决定权。
+
+START=13
+
+start() {
+	. /lib/functions.sh
+
+	local cc qdisc
+	config_load tcpcc
+	config_get cc main cc "bbr"
+	config_get qdisc main qdisc "fq"
+
+	# 先设 qdisc：fq 需要 sch_fq（kmod-sched），模块未加载时写会失败，忽略即可
+	if [ -n "$qdisc" ]; then
+		echo "$qdisc" > /proc/sys/net/core/default_qdisc 2>/dev/null
+	fi
+
+	# 再设算法：内核不支持时会拒绝写入，保留原值并记一条日志
+	if [ -n "$cc" ]; then
+		echo "$cc" > /proc/sys/net/ipv4/tcp_congestion_control 2>/dev/null \
+			|| logger -t tcpcc "无法设置拥塞控制算法 $cc（未编译或未加载）"
+	fi
+}
+
+stop() {
+	echo "cubic" > /proc/sys/net/ipv4/tcp_congestion_control 2>/dev/null
+	echo "fq_codel" > /proc/sys/net/core/default_qdisc 2>/dev/null
+}
+
+# restart/reload 只重放当前配置，不走 stop，避免中间态被切回 cubic
+restart() {
+	start
+}
+
+reload() {
+	start
+}

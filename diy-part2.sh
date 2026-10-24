@@ -63,4 +63,18 @@ if [ ! -d package/luci-app-openclash ]; then
     rm -rf "$GITHUB_WORKSPACE/oc-upstream"
 fi
 
+# 4) 自定义 LuCI 包：TCP 拥塞控制开关页（luci-app-tcpcc）
+#    包本体在仓库根目录 luci-app-tcpcc/，这里拷进 openwrt/package/ 供 defconfig 扫描。
+#    .config 里 CONFIG_PACKAGE_luci-app-tcpcc=y 依赖它存在；拷失败就让构建直接失败，
+#    否则会静默得到一个"没有开关页"的固件。
+if [ -d "$GITHUB_WORKSPACE/luci-app-tcpcc" ]; then
+    echo "==> 安装自定义包 luci-app-tcpcc"
+    rm -rf "$PWD/package/luci-app-tcpcc"
+    cp -a "$GITHUB_WORKSPACE/luci-app-tcpcc" "$PWD/package/luci-app-tcpcc"
+    ls -l "$PWD/package/luci-app-tcpcc"
+else
+    echo "==> !! 仓库里找不到 luci-app-tcpcc，中止（避免编出没有开关页的固件）"
+    exit 1
+fi
+
 exit 0
