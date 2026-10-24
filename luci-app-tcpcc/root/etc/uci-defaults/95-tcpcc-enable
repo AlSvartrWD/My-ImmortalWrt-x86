@@ -1,0 +1,6 @@
+#!/bin/sh
+# 首启启用 tcpcc 服务：保证 /etc/config/tcpcc 的选择在每次开机时被应用
+# （kmod-tcp-bbr 自带的 sysctl.d 只设 cc=bbr，不管 qdisc）
+[ -x /etc/init.d/tcpcc ] && /etc/init.d/tcpcc enable >/dev/null 2>&1
+
+exit 0
